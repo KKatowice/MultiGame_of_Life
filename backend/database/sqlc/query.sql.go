@@ -81,6 +81,22 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	return err
 }
 
+const get_wh = `-- name: Get_wh :one
+SELECT wid, hei FROM games WHERE games.roomId = (?)
+`
+
+type Get_whRow struct {
+	Wid sql.NullInt32
+	Hei sql.NullInt32
+}
+
+func (q *Queries) Get_wh(ctx context.Context, roomid int32) (Get_whRow, error) {
+	row := q.db.QueryRowContext(ctx, get_wh, roomid)
+	var i Get_whRow
+	err := row.Scan(&i.Wid, &i.Hei)
+	return i, err
+}
+
 const listUsers = `-- name: ListUsers :one
 SELECT userId FROM users WHERE users.name = (?)
 `

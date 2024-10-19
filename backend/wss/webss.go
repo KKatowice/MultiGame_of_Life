@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/gofiber/contrib/websocket"
@@ -26,28 +27,41 @@ func main() {
 		return fiber.ErrUpgradeRequired
 	})
 
+	type IncomingPositions struct {
+		UID int     `json:"uid"`
+		X   float64 `json:"x"`
+		Y   float64 `json:"y"`
+	}
 	app.Use("/ws/:roomId", websocket.New(func(c *websocket.Conn) {
+		//TODO map room:poolqueue  --map usid pool?
+		defer func() {
+			c.Close()
+		}()
 		// c.Locals is added to the *websocket.Conn
 		log.Println(c.Locals("allowed"))            // true
 		log.Println("roomID: ", c.Params("roomId")) // 123
-		//log.Println("user1: ", c.Query("user1"))
-		//log.Println("user2: ", c.Query("user2")) // 1.0
-		log.Println(c.Cookies("session")) // ""
+		log.Println(c.Cookies("session"))           // ""
+		//incomingPos := make(chan IncomingPositions)
+		//enemyPos := make(chan [][]int32)
 
-		// websocket.Conn bindings https://pkg.go.dev/github.com/fasthttp/websocket?tab=doc#pkg-index
 		var (
 			mt  int
 			msg []byte
 			err error
 		)
 		for {
-			if mt, msg, err = c.ReadMessage(); err != nil {
+			mt, msg, err = c.ReadMessage()
+			if err != nil {
 				log.Println("read:", err)
+				//incomingPos <- mt
 				break
 			}
-			log.Printf("recv: %s", msg)
+			var tstz IncomingPositions
+			_ = json.Unmarshal(msg, &tstz)
+			log.Println("recv: ", tstz)
 
-			if err = c.WriteMessage(mt, msg); err != nil {
+			err1 := c.WriteMessage(mt, msg)
+			if err1 != nil {
 				log.Println("write:", err)
 				break
 			}

@@ -135,6 +135,36 @@ func CreateLobby(uid int32, roId int32) error {
 
 	return nil
 }
+func JoinLobby(uid int32, roId int32) (int32, int32, error) {
+	once.Do(initDB)
+	ctx := context.Background()
+	//TODO check if space & if non sta gia in
+	parm := sqlc.CreateLobbyParams{
+		Roomid: sql.NullInt32{
+			Int32: roId,
+			Valid: true,
+		},
+		Userid: sql.NullInt32{
+			Int32: uid,
+			Valid: true,
+		},
+	}
+	fmt.Println("param i ndb?", roId, uid)
+
+	err := queries.CreateLobby(ctx, parm)
+	if err != nil {
+		fmt.Println("Error", err)
+		return 0, 0, err
+	}
+	wh, err2 := queries.Get_wh(ctx, roId)
+	if err2 != nil {
+		fmt.Println("Error", err)
+		return 0, 0, err
+	}
+	fmt.Println("wh????", wh)
+
+	return wh.Wid.Int32, wh.Hei.Int32, nil
+}
 
 func CreateUser(name string) (uid int32, err error) {
 	once.Do(initDB)

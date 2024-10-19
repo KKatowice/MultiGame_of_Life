@@ -13,12 +13,13 @@ let ws;
 
 //consts
 const SPEED = 360;
-let userId
+//let userId
 
 
 
 
 scene('startGame',()=>{
+    
     k.setBackground([255,0,0])
     /* add([
         text("Create Game", { width: width() / 3 }),
@@ -53,16 +54,18 @@ scene('startGame',()=>{
         pos(50,110),
     ])
     onClick("buttonConf",()=>{
+        let userId
         let res = fetch(`http://127.0.0.1:3000/api/temp_user?nome=${objName.text.split(" Name: ")[1]}`).then(result => {
             
            let jsn = result.text()
            jsn.then(resultz => {
                 console.log(`res: ${resultz}`);
                 userId = resultz
+                if(result.ok){
+                    go('game',userId)
+                }
            })
-           if(result.ok){
-            go('game')
-           }
+           
         })
         
         
@@ -72,35 +75,54 @@ scene('startGame',()=>{
 })
 
 
-scene('game',async()=>{
-    //
-    const queryString = window.location.search
-    const urlParams = new URLSearchParams(queryString);
-    let rmId = urlParams.get("roomId")
-    if (!rmId){
+scene('game',async(uid)=>{
+    console.log(`USERID??? ${uid}`);
+    
+    let windowWidth;
+    let windowHeight;
+    const urlz = window.location.href.split("/")
+    console.log(`urlszz`, urlz);
+    let rmId
+
+    if (urlz[3] == ''){
+        windowWidth = window.width()
+        windowHeight = window.height()
         
         ///genera
-        let res = fetch(`http://127.0.0.1:3000/api/host_game?h=${windowHeight}&w=${windowWidth}&userId=${userId}`).then(result => {
+        let res = fetch(`http://127.0.0.1:3000/api/host_game?h=${windowHeight}&w=${windowWidth}&userId=${uid}`).then(result => {
             
             let jsn = result.text()
             jsn.then(resultz => {
-                 console.log(`res: ${resultz}`);
-                 rmId = resultz
-                 window.location.href = window.location.href + "/" + roomId ;
+                    console.log(`res: ${resultz}`);
+                    rmId = resultz
+                    const currentUrl = window.location.href;
+                    const newUrl = currentUrl + rmId;
+                    history.pushState(null, '', newUrl);
             })
          })
     }else{
         //joina
-        let res = fetch(`http://127.0.0.1:3000/api/join_game?userId=${userId}&roomID=${rmId}`).then(result => {
+        rmId = urlz[3]
+        let res = fetch(`http://127.0.0.1:3000/api/join_game?userId=${uid}&roomID=${rmId}`).then(result => {
             let jsn = result.text()
             jsn.then(resultz => {
-                 console.log(`res: ${resultz}`);
-                 let bho = resultz
+                console.log(`res: ${resultz}`);
+                let wh = resultz
+                windowWidth = wh.w
+                windowHeight = wh.h
             })
          })
     }
     ws = new window.WebSocket(`ws://127.0.0.1:3001/ws/${rmId}`);
     //per wss
+    ws.addEventListener("message", (event) => {
+        let jsEvent = JSON.parse(event.data)
+        
+        if (parseInt(jsEvent.uid) != uid){
+            console.log("Message from other player ", event.data, "io->",uid);
+        }
+        
+      });
 
     k.setBackground([0,0,0])
 
@@ -140,8 +162,9 @@ scene('game',async()=>{
         
     });
     onKeyDown(["w","a","s","d"],()=>{
+        console.log(`pos? send to ws`, player.pos);
         
-        ws.send({'uid':'1','pos':player.pos})
+        ws.send(JSON.stringify({'uid':parseInt(uid),'x':parseFloat(player.pos.x), 'y':parseFloat(player.pos.y)}))
     })
 
 
@@ -163,8 +186,7 @@ scene('game',async()=>{
     let enemySize = 15; 
     let isEnemInit = false
     let spacing = 10; // Spaziatura tra gli enemies
-    let windowWidth = window.width();
-    let windowHeight = window.height();
+    
 
     function createEnemy(posX,posY){
         return [

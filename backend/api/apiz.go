@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
@@ -23,6 +24,8 @@ func main() { //api pe checknome
 		h, err1 := strconv.Atoi(c.Query("h"))
 		w, err2 := strconv.Atoi(c.Query("w"))
 		n, err3 := strconv.Atoi(c.Query("userId"))
+		fmt.Println("params? ", h, w, n)
+
 		if err1 != nil && err2 != nil && err3 != nil {
 			// ... handle error
 			panic("error W-H-n atoi")
@@ -32,6 +35,8 @@ func main() { //api pe checknome
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("Error creating game")
 		}
+		fmt.Println("dioicane", int32(n), rmId)
+
 		errz := databases.CreateLobby(int32(n), rmId)
 		if errz != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("Error creating lobby")
@@ -39,6 +44,7 @@ func main() { //api pe checknome
 		struid := strconv.Itoa(int(rmId))
 		return c.Status(fiber.StatusOK).SendString(struid)
 	})
+
 	app.Get("/api/temp_user", func(c *fiber.Ctx) error {
 		nme := c.Query("nome")
 		if len(nme) >= 10 {
@@ -55,6 +61,25 @@ func main() { //api pe checknome
 	})
 	///join_game?userId=${userId}&roomID=${rmId}
 	///TODO
+	app.Get("/api/join_game", func(c *fiber.Ctx) error {
+		rmId, err1 := strconv.Atoi(c.Query("roomID"))
+		uid, err2 := strconv.Atoi(c.Query("userId"))
+		if err1 != nil && err2 != nil {
+			panic("errore aroi roomid userid")
+		}
+		w, h, err := databases.JoinLobby(int32(uid), int32(rmId))
+		fmt.Println("ao???", w, h)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error creating lobby")
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"w": w,
+			"h": h,
+		})
+
+	})
 
 	//start server
 	log.Fatal(app.Listen(":3000"))
