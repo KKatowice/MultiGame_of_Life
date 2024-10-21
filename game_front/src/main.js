@@ -87,31 +87,32 @@ scene('game',async(uid)=>{
     if (urlz[3] == ''){
         windowWidth = window.width()
         windowHeight = window.height()
+        console.log(`fra1???/`,windowWidth,windowHeight);
         
         ///genera
-        let res = fetch(`http://127.0.0.1:3000/api/host_game?h=${windowHeight}&w=${windowWidth}&userId=${uid}`).then(result => {
+        let result = await fetch(`http://127.0.0.1:3000/api/host_game?h=${windowHeight}&w=${windowWidth}&userId=${uid}`)
             
-            let jsn = result.text()
-            jsn.then(resultz => {
-                    console.log(`res: ${resultz}`);
-                    rmId = resultz
-                    const currentUrl = window.location.href;
-                    const newUrl = currentUrl + rmId;
-                    history.pushState(null, '', newUrl);
-            })
-         })
+        let resultz = await result.text()
+            
+        console.log(`ressesss: ${resultz}`);
+        rmId = resultz
+        const currentUrl = window.location.href;
+        const newUrl = currentUrl + rmId;
+        history.pushState(null, '', newUrl);
+            
+         
     }else{
         //joina
         rmId = urlz[3]
-        let res = fetch(`http://127.0.0.1:3000/api/join_game?userId=${uid}&roomID=${rmId}`).then(result => {
-            let jsn = result.text()
-            jsn.then(resultz => {
-                console.log(`res: ${resultz}`);
-                let wh = resultz
-                windowWidth = wh.w
-                windowHeight = wh.h
-            })
-         })
+        let result = await fetch(`http://127.0.0.1:3000/api/join_game?userId=${uid}&roomID=${rmId}`)
+        let resultz = await result.json()
+    
+        console.log(`resseesd: ${resultz}`);
+        let wh = resultz
+        windowWidth = wh.w
+        windowHeight = wh.h
+        
+         console.log(`fra2???/`,windowWidth,windowHeight);
     }
     ws = new window.WebSocket(`ws://127.0.0.1:3001/ws/${rmId}`);
     //per wss
@@ -199,6 +200,8 @@ scene('game',async(uid)=>{
 
 
     function calculateGrid(windowWidth, windowHeight, enemySize, spacing) {
+        console.log(`wwwidjiwjd`,windowWidth, windowHeight);
+        
         // Calcola quante colonne possono stare nella larghezza della finestra
         let cols = Math.floor(windowWidth / (enemySize + spacing));
         
@@ -211,6 +214,7 @@ scene('game',async(uid)=>{
     function calculateGridPositions(grid, windowWidth, windowHeight, enemySize, spacing) {
         let paddingX = (windowWidth - (grid.cols * enemySize)) / (grid.cols + 1); // Spaziatura orizzontale
         let paddingY = (windowHeight - (grid.rows * enemySize)) / (grid.rows + 1); // Spaziatura verticale
+        console.log(`@@@@@@@`,grid, windowWidth, windowHeight, enemySize, spacing);
         
         let positions = [];
         for (let r = 1; r <= grid.rows; r++) {
@@ -230,33 +234,42 @@ scene('game',async(uid)=>{
         
         let enemyCount = 0;
         if (isEnemInit) {
+            //console.log(`che voi?`,enemyCount < enemInit && availablePositions.length > 0,enemyCount < enemInit , availablePositions.length > 0);
+            
             while (enemyCount < enemInit && availablePositions.length > 0) {
                 let randomIndex = getRandomInt(availablePositions.length); 
                 let randomPosition = availablePositions.splice(randomIndex, 1)[0]; // Rimuovi la posizione scelta
                 let e = createEnemy(randomPosition.y, randomPosition.x); // Usa la posizione casuale
+                console.log(`enem?`,e);
+                
                 newP.push(e);
                 enemyCount++;
             }
             //qua mando posizione iniziale a server
             isEnemInit = true
         } else {
+            //console.log(`che voia?`,enemyCount < enemInit && availablePositions.length > 0,enemyCount < enemInit, availablePositions.length > 0);
             //qua ricezione msg wss per 
             while (enemyCount < enemInit && availablePositions.length > 0) {
                 let randomIndex = getRandomInt(availablePositions.length); 
                 let randomPosition = availablePositions.splice(randomIndex, 1)[0]; 
                 let e = createEnemy(randomPosition.y, randomPosition.x); 
+                //console.log(`e??`,e);
+                
                 newP.push(e);
                 enemyCount++;
             }
         }
-
+        ///console.log(`porcamadonna`,newP);
+        
         return newP;
     }
 
 
     const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
-
+    console.log(`????????????????????''''''''`);
+    
     //main
     let cycles = true
     let grid = calculateGrid(windowWidth, windowHeight, enemySize, spacing);
