@@ -81,6 +81,19 @@ func main() { //api pe checknome
 
 	})
 
+	app.Get("/api/quit_lobby", func(c *fiber.Ctx) error {
+		uid, erra := strconv.Atoi(c.Query("userId"))
+		if erra != nil {
+			panic("error atoi")
+		}
+		err := databases.RemoveUser(uid)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error removing user")
+		}
+		return c.Status(fiber.StatusOK).SendString("Done")
+
+	})
+
 	//start server
 	log.Fatal(app.Listen(":3000"))
 }

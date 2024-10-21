@@ -23,8 +23,12 @@ type EnemyPosition struct {
 	X   float64
 	Y   float64
 }
+type ConnWrapper struct {
+	conn    *websocket.Conn
+	writeCh chan []byte // Dedicated channel for writing to this connection
+}
 type ConnPool struct {
-	conn      []*websocket.Conn
+	conn      []*ConnWrapper
 	enemyPos  *chan EnemyPosition
 	playerPos *chan []byte
 }
@@ -53,15 +57,22 @@ func handleSendMessages(poolrm *ConnPool, wg *sync.WaitGroup) {
 			fmt.Println("entro/?", pos)
 			for _, v := range poolrm.conn {
 
-				err1 := v.WriteMessage(1, pos)
-				if err1 != nil {
-					log.Println("write:", err1)
-					break
-				}
+				v.writeCh <- pos
+
 			}
 		case posE := <-*poolrm.enemyPos:
 			fmt.Println("TODO", posE)
 
+		}
+	}
+}
+func handleConnectionWrites(cw *ConnWrapper, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for msg := range cw.writeCh {
+		err := cw.conn.WriteMessage(1, msg)
+		if err != nil {
+			log.Println("Write error:", err)
+			return
 		}
 	}
 }
@@ -101,6 +112,10 @@ func main() {
 		log.Println("roomID: ", c.Params("roomId")) // 123
 		log.Println(c.Cookies("session"))           // ""
 
+		cw := &ConnWrapper{
+			conn:    c,
+			writeCh: make(chan []byte, 10), // Buffered channel for this connection
+		}
 		rmId, errA := strconv.Atoi(c.Params("roomId"))
 		if errA != nil {
 			return ///bho
@@ -111,16 +126,18 @@ func main() {
 			incomPosz := make(chan []byte)
 			enemPosz := make(chan EnemyPosition)
 			poolz[rmId] = &ConnPool{
-				conn:      make([]*websocket.Conn, 0),
+				conn:      make([]*ConnWrapper, 0),
 				enemyPos:  &enemPosz,
 				playerPos: &incomPosz,
 			}
 		}
-		poolz[rmId].conn = append(poolz[rmId].conn, c)
+		poolz[rmId].conn = append(poolz[rmId].conn, cw)
 
-		wg.Add(2)
+		wg.Add(3)
 		go handleMessages(c, poolz[rmId].playerPos, &wg)
 		go handleSendMessages(poolz[rmId], &wg)
+		go handleConnectionWrites(cw, &wg)
+
 		wg.Wait()
 		//var tstz IncomingPositions
 		//_ = json.Unmarshal(msg, &tstz)

@@ -71,6 +71,13 @@ func GetUser(name string) (bool, int32) {
 
 }
 
+func RemoveUser(uid int) error {
+	once.Do(initDB)
+	ctx := context.Background()
+	err := queries.DeleteUser(ctx, int32(uid))
+	return err
+}
+
 /*
 	 func randString(length int) string {
 		var random = rand.New(rand.NewSource(1))

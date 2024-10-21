@@ -83,6 +83,12 @@ scene('game',async(uid)=>{
     const urlz = window.location.href.split("/")
     console.log(`urlszz`, urlz);
     let rmId
+    let uids = {}
+
+    window.addEventListener('beforeunload', async function (e) { 
+        let result = await fetch(`http://127.0.0.1:3000/api/quit_lobby?userId=${uid}`)
+        /// TODO trigger db se no lobby in game delete it
+    });
 
     if (urlz[3] == ''){
         windowWidth = window.width()
@@ -107,12 +113,12 @@ scene('game',async(uid)=>{
         let result = await fetch(`http://127.0.0.1:3000/api/join_game?userId=${uid}&roomID=${rmId}`)
         let resultz = await result.json()
     
-        console.log(`resseesd: ${resultz}`);
+        ////console.log(`resseesd: ${resultz}`);
         let wh = resultz
         windowWidth = wh.w
         windowHeight = wh.h
         
-         console.log(`fra2???/`,windowWidth,windowHeight);
+         ////console.log(`fra2???/`,windowWidth,windowHeight);
     }
     ws = new window.WebSocket(`ws://127.0.0.1:3001/ws/${rmId}`);
     //per wss
@@ -120,7 +126,19 @@ scene('game',async(uid)=>{
         let jsEvent = JSON.parse(event.data)
         
         if (parseInt(jsEvent.uid) != uid){
-            console.log("Message from other player ", event.data, "io->",uid);
+            //console.log("Message from other player ", event.data, "io->",uid);
+            if (!uids[jsEvent.uid]){
+                const mplayer = add([
+                    rect(40, 40), // Create a rectangle (width, height)
+                    color(255, 255, 50), // Set color to white (RGB values)
+                    pos(0,0), // Position it at the center of the screen
+                ])
+                uids[jsEvent.uid] = mplayer
+            }
+            //console.log(`muove erso x ${jsEvent.x} -- y ${jsEvent.y}`);
+            
+            uids[jsEvent.uid].moveTo(vec2(jsEvent.x,jsEvent.y),SPEED)
+           
         }
         
       });
@@ -131,9 +149,9 @@ scene('game',async(uid)=>{
     const player = add([
         rect(50, 50), // Create a rectangle (width, height)
         color(255, 255, 255), // Set color to white (RGB values)
-        pos(center()), // Position it at the center of the screen
+        pos(0,0), // Position it at the center of the screen
     ]);
-
+player.moveTo()
     // onKeyDown() registers an event that runs every frame as long as the user is holding a certain key
     onKeyDown("a", () => {
         // Move player left
@@ -163,8 +181,7 @@ scene('game',async(uid)=>{
         
     });
     onKeyDown(["w","a","s","d"],()=>{
-        console.log(`pos? send to ws`, player.pos);
-        
+        //console.log(`pos? send to ws`, player.pos);
         ws.send(JSON.stringify({'uid':parseInt(uid),'x':parseFloat(player.pos.x), 'y':parseFloat(player.pos.y)}))
     })
 
@@ -200,7 +217,7 @@ scene('game',async(uid)=>{
 
 
     function calculateGrid(windowWidth, windowHeight, enemySize, spacing) {
-        console.log(`wwwidjiwjd`,windowWidth, windowHeight);
+        //console.log(`wwwidjiwjd`,windowWidth, windowHeight);
         
         // Calcola quante colonne possono stare nella larghezza della finestra
         let cols = Math.floor(windowWidth / (enemySize + spacing));
@@ -214,7 +231,7 @@ scene('game',async(uid)=>{
     function calculateGridPositions(grid, windowWidth, windowHeight, enemySize, spacing) {
         let paddingX = (windowWidth - (grid.cols * enemySize)) / (grid.cols + 1); // Spaziatura orizzontale
         let paddingY = (windowHeight - (grid.rows * enemySize)) / (grid.rows + 1); // Spaziatura verticale
-        console.log(`@@@@@@@`,grid, windowWidth, windowHeight, enemySize, spacing);
+        //console.log(`@@@@@@@`,grid, windowWidth, windowHeight, enemySize, spacing);
         
         let positions = [];
         for (let r = 1; r <= grid.rows; r++) {
@@ -268,7 +285,7 @@ scene('game',async(uid)=>{
 
     const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
-    console.log(`????????????????????''''''''`);
+    //console.log(`????????????????????''''''''`);
     
     //main
     let cycles = true

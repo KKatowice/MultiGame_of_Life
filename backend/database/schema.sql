@@ -11,6 +11,6 @@ CREATE TABLE `lobby` (
 	`userId`	INTEGER,
 	`roomId`	INTEGER,
 	`id`	INTEGER PRIMARY KEY AUTO_INCREMENT,
-	CONSTRAINT `fk_room` FOREIGN KEY(`roomId`) REFERENCES `games`(`roomId`),
-	CONSTRAINT `fk_user` FOREIGN KEY(`userId`) REFERENCES `users`(`userId`)
+	CONSTRAINT `fk_room` FOREIGN KEY(`roomId`) REFERENCES `games`(`roomId`) ON DELETE CASCADE,
+	CONSTRAINT `fk_user` FOREIGN KEY(`userId`) REFERENCES `users`(`userId`) ON DELETE CASCADE
 );
