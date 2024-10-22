@@ -38,6 +38,31 @@ func initDB() {
 
 }
 
+func Get_wh(rmId int) (int32, int32, bool) {
+	once.Do(initDB)
+	ctx := context.Background()
+	/* nme := sql.NullString{
+		String: name,
+		Valid:  true,
+	} */
+	fmt.Println("sup?")
+
+	wh, err := queries.Get_wh(ctx, int32(rmId))
+	fmt.Println("wh?", wh)
+
+	if err != nil {
+		fmt.Println("ao get wh fail")
+		return 0, 0, true
+	}
+	return wh.Wid.Int32, wh.Hei.Int32, false
+	/* jsonResponse, err := json.Marshal(&urs)
+	if err != nil {
+		fmt.Println("jsonResponse error convert")
+	}
+	fmt.Println("dai?", jsonResponse) */
+
+}
+
 func GetUser(name string) (bool, int32) {
 	once.Do(initDB)
 	ctx := context.Background()

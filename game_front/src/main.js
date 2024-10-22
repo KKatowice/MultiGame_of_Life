@@ -151,7 +151,6 @@ scene('game',async(uid)=>{
         color(255, 255, 255), // Set color to white (RGB values)
         pos(0,0), // Position it at the center of the screen
     ]);
-player.moveTo()
     // onKeyDown() registers an event that runs every frame as long as the user is holding a certain key
     onKeyDown("a", () => {
         // Move player left
@@ -217,13 +216,14 @@ player.moveTo()
 
 
     function calculateGrid(windowWidth, windowHeight, enemySize, spacing) {
-        //console.log(`wwwidjiwjd`,windowWidth, windowHeight);
+        console.log(`wwwidjiwjd`,windowWidth, windowHeight);
         
         // Calcola quante colonne possono stare nella larghezza della finestra
         let cols = Math.floor(windowWidth / (enemySize + spacing));
         
         // Calcola quante righe possono stare nell'altezza della finestra
         let rows = Math.floor(windowHeight / (enemySize + spacing));
+        console.log(`rwo ${rows} -- col ${cols}`);
         
         return { rows, cols };
     }
@@ -234,13 +234,21 @@ player.moveTo()
         //console.log(`@@@@@@@`,grid, windowWidth, windowHeight, enemySize, spacing);
         
         let positions = [];
+        let rowsList = []///tst
         for (let r = 1; r <= grid.rows; r++) {
+            let trl = []
             for (let c = 1; c <= grid.cols; c++) {
                 let x = c * (enemySize + paddingX);
                 let y = r * (enemySize + paddingY);
                 positions.push({ x: x, y: y });
+                trl.push({ x: x, y: y })///tst
+                console.log(`{${x}:${y}}`);
+                
             }
+            rowsList.push(trl)///tst
         }
+        
+        
         return positions;
     }
 
@@ -270,7 +278,7 @@ player.moveTo()
             while (enemyCount < enemInit && availablePositions.length > 0) {
                 let randomIndex = getRandomInt(availablePositions.length); 
                 let randomPosition = availablePositions.splice(randomIndex, 1)[0]; 
-                let e = createEnemy(randomPosition.y, randomPosition.x); 
+                let e = createEnemy(randomPosition.x, randomPosition.y); 
                 //console.log(`e??`,e);
                 
                 newP.push(e);
@@ -285,12 +293,12 @@ player.moveTo()
 
     const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
-    //console.log(`????????????????????''''''''`);
+    console.log(`????????????????????''''''''`,windowWidth, windowHeight);
     
     //main
     let cycles = true
     let grid = calculateGrid(windowWidth, windowHeight, enemySize, spacing);
-    let gridPositions = calculateGridPositions(grid, windowWidth, windowHeight, enemySize, spacing);
+    let gridPositions = calculateGridPositions(grid, windowWidth, windowHeight, enemySize, spacing);//
     onKeyDown(".", () => {
         cycles = false
     });

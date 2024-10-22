@@ -7,17 +7,20 @@ import (
 	"strconv"
 	"sync"
 
+	databases "backend/database"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
-	//databases "backend/database"
 )
 
-type IncomingPositions struct {
-	UID int     `json:"uid"`
-	X   float64 `json:"x"`
-	Y   float64 `json:"y"`
-}
+/*
+	 type IncomingPositions struct {
+		UID int     `json:"uid"`
+		X   float64 `json:"x"`
+		Y   float64 `json:"y"`
+	}
+*/
 type EnemyPosition struct {
 	RID int
 	X   float64
@@ -31,6 +34,51 @@ type ConnPool struct {
 	conn      []*ConnWrapper
 	enemyPos  *chan EnemyPosition
 	playerPos *chan []byte
+}
+
+func calculateGrid(ww int32, hh int32) {
+	w := float64(ww)
+	h := float64(hh)
+	var enemySize int32 = 15
+	flotES := float64(enemySize)
+	var spacing int32 = 10
+	var cols int32 = ww / (enemySize + spacing)
+	var rows int32 = hh / (enemySize + spacing)
+	paddingX := (w - (float64(cols * enemySize))) / (float64(cols) + 1) // Spaziatura orizzontale
+	paddingY := (h - (float64(rows * enemySize))) / (float64(rows) + 1) // Spaziatura verticale
+
+	var allPositions [][][2]float64 //[[row]]
+	for r := 1; r <= int(rows); r++ {
+		var tempRow [][2]float64
+		for c := 1; c <= int(cols); c++ {
+			var tempCoord [2]float64
+			tempCoord[0] = float64(c) * (flotES + paddingX)
+			tempCoord[1] = float64(r) * (flotES + paddingY)
+			tempRow = append(tempRow, tempCoord)
+		}
+		allPositions = append(allPositions, tempRow)
+	}
+
+}
+
+func handleGameOfLife(rmId int, speed int, density int, wg *sync.WaitGroup) {
+	//TODO later as param
+	speed = 5    // secondi/10 between cycles = 0.5s
+	density = 20 // %
+	//positions := make([][]int, 0) //size = calc con w e h
+	var allPositions [][][2]float64 //[[row]]
+	w, h, err := databases.Get_wh(rmId)
+	calculateGrid(w, h)
+	if err {
+		fmt.Println("error get wh: ", err)
+	}
+
+	//get w,h from db
+	defer wg.Done()
+
+	for {
+
+	}
 }
 
 func handleMessages(c *websocket.Conn, chPool *chan []byte, wg *sync.WaitGroup) {

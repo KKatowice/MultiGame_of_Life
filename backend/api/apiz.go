@@ -93,6 +93,14 @@ func main() { //api pe checknome
 		return c.Status(fiber.StatusOK).SendString("Done")
 
 	})
+	app.Get("/api/test", func(c *fiber.Ctx) error {
+		id, _ := strconv.Atoi(c.Query("id"))
+		_, _, err := databases.Get_wh(id)
+		if err {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error test")
+		}
+		return c.Status(fiber.StatusOK).SendString("Done")
+	})
 
 	//start server
 	log.Fatal(app.Listen(":3000"))
