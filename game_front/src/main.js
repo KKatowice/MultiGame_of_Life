@@ -85,10 +85,7 @@ scene('game',async(uid)=>{
     let rmId
     let uids = {}
 
-    window.addEventListener('beforeunload', async function (e) { 
-        let result = await fetch(`http://127.0.0.1:3000/api/quit_lobby?userId=${uid}`)
-        /// TODO trigger db se no lobby in game delete it
-    });
+    
 
     if (urlz[3] == ''){
         windowWidth = window.width()
@@ -120,29 +117,56 @@ scene('game',async(uid)=>{
         
          ////console.log(`fra2???/`,windowWidth,windowHeight);
     }
+    
     ws = new window.WebSocket(`ws://127.0.0.1:3001/ws/${rmId}`);
+    
     //per wss
-    ws.addEventListener("message", (event) => {
+    ws.addEventListener("message", (event) => { ///TODO MMH MANNAGGIO MESA PROBLEMA A INVVIATUTTO INSIEME SU UN CHANNEL?/ BHO E SU JS ? BHO 
         let jsEvent = JSON.parse(event.data)
+        console.log(`jsevent`, jsEvent);
         
-        if (parseInt(jsEvent.uid) != uid){
-            //console.log("Message from other player ", event.data, "io->",uid);
-            if (!uids[jsEvent.uid]){
-                const mplayer = add([
-                    rect(40, 40), // Create a rectangle (width, height)
-                    color(255, 255, 50), // Set color to white (RGB values)
-                    pos(0,0), // Position it at the center of the screen
-                ])
-                uids[jsEvent.uid] = mplayer
+        if(jsEvent.uid){
+            if (parseInt(jsEvent.uid) != uid){
+                //console.log("Message from other player ", event.data, "io->",uid);
+                if (!uids[jsEvent.uid]){
+                    const mplayer = add([
+                        rect(40, 40), // Create a rectangle (width, height)
+                        color(255, 255, 50), // Set color to white (RGB values)
+                        pos(jsEvent.x,jsEvent.y), // Position it at the center of the screen
+                    ])
+                    uids[jsEvent.uid] = mplayer
+                }
+                uids[jsEvent.uid].moveTo(vec2(jsEvent.x,jsEvent.y),SPEED)
             }
-            //console.log(`muove erso x ${jsEvent.x} -- y ${jsEvent.y}`);
+        }else if (jsEvent.RID){
+            destroyAll("enemy")
+            jsEvent.Positions.forEach(element => {
+                add(createEnemy(element.X, element.Y)); // Usa la posizione casuale
+                
+            });
+            ////console.log(`------------------------`);
             
-            uids[jsEvent.uid].moveTo(vec2(jsEvent.x,jsEvent.y),SPEED)
-           
         }
         
       });
+      
+        ws.onclose = function (e){
+            let result = fetch(`http://127.0.0.1:3000/api/quit_lobby?userId=${uid}`)
+        };
+        window.addEventListener("unload", function () {
+            if(ws.readyState == WebSocket.OPEN)
+                ws.close();
+        });
 
+      function createEnemy(posX,posY){
+
+        return [
+            rect(15, 15), ///todo
+            pos(posX,posY),
+            color(255, 0, 0),
+            "enemy",
+        ]
+    }
     k.setBackground([0,0,0])
 
     // Add player game object (a white square)
@@ -199,23 +223,10 @@ scene('game',async(uid)=>{
         pos(350, 15),
     ]); 
 
-    let enemInit = 30
-    let enemySize = 15; 
-    let isEnemInit = false
-    let spacing = 10; // Spaziatura tra gli enemies
     
 
-    function createEnemy(posX,posY){
-        return [
-            rect(enemySize, enemySize),
-            pos(posX,posY),
-            color(255, 0, 0),
-            "enemy",
-        ]
-    }
 
-
-    function calculateGrid(windowWidth, windowHeight, enemySize, spacing) {
+    /* function calculateGrid(windowWidth, windowHeight, enemySize, spacing) {
         console.log(`wwwidjiwjd`,windowWidth, windowHeight);
         
         // Calcola quante colonne possono stare nella larghezza della finestra
@@ -226,9 +237,9 @@ scene('game',async(uid)=>{
         console.log(`rwo ${rows} -- col ${cols}`);
         
         return { rows, cols };
-    }
+    } */
 
-    function calculateGridPositions(grid, windowWidth, windowHeight, enemySize, spacing) {
+/*     function calculateGridPositions(grid, windowWidth, windowHeight, enemySize, spacing) {
         let paddingX = (windowWidth - (grid.cols * enemySize)) / (grid.cols + 1); // Spaziatura orizzontale
         let paddingY = (windowHeight - (grid.rows * enemySize)) / (grid.rows + 1); // Spaziatura verticale
         //console.log(`@@@@@@@`,grid, windowWidth, windowHeight, enemySize, spacing);
@@ -250,55 +261,32 @@ scene('game',async(uid)=>{
         
         
         return positions;
-    }
+    } */
 
-    function test_spawnPosition(gp) {
+   /*  function test_spawnPosition(gp) {
         let newP = [];
         
-        let availablePositions = [...gp];
+        gp.forEach(element => {
+            let e = createEnemy(element.y, element.x); // Usa la posizione casuale
+            console.log(`enem?`,e);
+                    
+            add(e) 
+        });
         
-        let enemyCount = 0;
-        if (isEnemInit) {
-            //console.log(`che voi?`,enemyCount < enemInit && availablePositions.length > 0,enemyCount < enemInit , availablePositions.length > 0);
-            
-            while (enemyCount < enemInit && availablePositions.length > 0) {
-                let randomIndex = getRandomInt(availablePositions.length); 
-                let randomPosition = availablePositions.splice(randomIndex, 1)[0]; // Rimuovi la posizione scelta
-                let e = createEnemy(randomPosition.y, randomPosition.x); // Usa la posizione casuale
-                console.log(`enem?`,e);
-                
-                newP.push(e);
-                enemyCount++;
-            }
-            //qua mando posizione iniziale a server
-            isEnemInit = true
-        } else {
-            //console.log(`che voia?`,enemyCount < enemInit && availablePositions.length > 0,enemyCount < enemInit, availablePositions.length > 0);
-            //qua ricezione msg wss per 
-            while (enemyCount < enemInit && availablePositions.length > 0) {
-                let randomIndex = getRandomInt(availablePositions.length); 
-                let randomPosition = availablePositions.splice(randomIndex, 1)[0]; 
-                let e = createEnemy(randomPosition.x, randomPosition.y); 
-                //console.log(`e??`,e);
-                
-                newP.push(e);
-                enemyCount++;
-            }
-        }
-        ///console.log(`porcamadonna`,newP);
+        
         
         return newP;
-    }
+    } */
 
 
-    const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
+    ///const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
-    console.log(`????????????????????''''''''`,windowWidth, windowHeight);
+    /* console.log(`????????????????????''''''''`,windowWidth, windowHeight);
     
     //main
     let cycles = true
-    let grid = calculateGrid(windowWidth, windowHeight, enemySize, spacing);
-    let gridPositions = calculateGridPositions(grid, windowWidth, windowHeight, enemySize, spacing);//
+    //let grid = calculateGrid(windowWidth, windowHeight, enemySize, spacing);
+    //let gridPositions = calculateGridPositions(grid, windowWidth, windowHeight, enemySize, spacing);//
     onKeyDown(".", () => {
         cycles = false
     });
@@ -314,7 +302,9 @@ scene('game',async(uid)=>{
         destroyAll("enemy")
         
         await sleep(10)
-    }
+    } */
+
+    
 	
 })
 
